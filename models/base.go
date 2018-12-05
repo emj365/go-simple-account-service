@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/sqlite" // dependency
 )
 
 var db *gorm.DB //database
@@ -10,8 +10,8 @@ var db *gorm.DB //database
 type User struct {
 	gorm.Model
 	Name     string `json:"name"`
-	Password string `json:"password"`
-	Salt     string `json:"Salt"`
+	Password string `json:"-"`
+	Salt     string `json:"-"`
 }
 
 func init() {
@@ -22,13 +22,15 @@ func init() {
 	}
 
 	db.Debug().AutoMigrate(&User{}) //Database migration
+	db.Debug().Model(&User{}).AddUniqueIndex("idx_user_name", "name")
 }
 
+// CloseDB close db connection
 func CloseDB() {
 	db.Close()
 }
 
-//returns a handle to the DB object
+// GetDB returns a handle to the DB object
 func GetDB() *gorm.DB {
 	return db
 }

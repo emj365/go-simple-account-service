@@ -11,15 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Message(status bool, message string) map[string]interface{} {
-	return map[string]interface{}{"status": status, "message": message}
-}
-
-func Respond(w http.ResponseWriter, data map[string]interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
-}
-
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/users", postUsers).Methods("POST")
@@ -32,54 +23,50 @@ func main() {
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
 	users := &[]models.User{}
-	models.GetDB().Find(users)
-	json.NewEncoder(w).Encode(users)
-	return
+	models.GetDB().Find(&users)
+	lib.Resonponse(w, http.StatusOK, users)
 }
 
 func postUsers(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
 	json.NewDecoder(r.Body).Decode(user)
+
+	count := 0
+	models.GetDB().Model(&models.User{}).Where("name = ?", user.Name).Count(&count)
+	if count > 0 {
+		lib.Resonponse(w, http.StatusConflict, map[string]interface{}{"name": user.Name})
+		return
+	}
+
 	var err error
 	user.Password, user.Salt, err = lib.GenPasswordHash(user.Password)
 	if err != nil {
 		fmt.Printf("Something went wrong: %s", err)
+		lib.ResonponseServerError(w)
 		return
 	}
 
 	models.GetDB().Create(user)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	lib.Resonponse(w, http.StatusCreated, user)
 }
 
 func authUser(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
 	json.NewDecoder(r.Body).Decode(user)
 
-	if auth(user.Name, user.Password) {
-		jwt, err := lib.GetJWT(123)
-		if err != nil {
-			fmt.Printf("Something went wrong: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Message(false, "can not generate JWT"))
-			return
-		}
+	foundUser := &models.User{Name: user.Name}
+	models.GetDB().Find(foundUser)
+	if !lib.Auth(foundUser, user.Name, user.Password) {
+		w.WriteHeader(http.StatusForbidden)
+	}
 
-		w.Header().Set("Authorization", "Bearer "+jwt)
-		json.NewEncoder(w).Encode(map[string]interface{}{"jwt": jwt})
+	jwt, err := lib.GetJWT(foundUser.ID)
+	if err != nil {
+		fmt.Printf("Something went wrong: %s", err)
+		lib.ResonponseServerError(w)
 		return
 	}
 
-	w.WriteHeader(http.StatusForbidden)
-}
-
-func auth(name string, password string) bool {
-	user := &models.User{Name: name}
-	models.GetDB().Find(user)
-	hash := lib.HashPassword(password, user.Salt)
-	if hash == user.Password {
-		return true
-	}
-
-	return false
+	w.Header().Set("Authorization", "Bearer "+jwt)
+	lib.Resonponse(w, http.StatusOK, map[string]interface{}{"jwt": jwt})
 }
