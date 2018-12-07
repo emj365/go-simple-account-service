@@ -54,8 +54,8 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundUser, count := models.FoundUserForAuth(user.Name)
-	if count == 0 || !lib.Auth(foundUser, user.Name, user.Password) {
+	foundUser := models.GetUserForAuth(user.Name)
+	if foundUser.Name == "" || !lib.Auth(foundUser, user.Name, user.Password) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}

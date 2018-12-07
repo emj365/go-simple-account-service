@@ -17,10 +17,10 @@ func FindAllUsers() []User {
 	return users
 }
 
-func FoundUserForAuth(name string) (User, int) {
-	user, count := User{}, 0
-	GetDB().Where(User{Name: name}).Select("Name, Password, Salt").Find(&user).Count(count)
-	return user, count
+func GetUserForAuth(name string) User {
+	user := User{}
+	GetDB().Where(User{Name: name}).Select("Name, Password, Salt").Find(&user)
+	return user
 }
 
 func CreateUser(user *User) {

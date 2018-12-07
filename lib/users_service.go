@@ -30,18 +30,11 @@ func GenPasswordHash(password string) (string, string, error) {
 		return "", "", err
 	}
 
-	return HashPassword(password, salt.String()), salt.String(), nil
-}
-
-func HashPassword(rawPassword string, salt string) string {
-	hasher := md5.New()
-	hasher.Write([]byte(rawPassword + salt))
-	password := hex.EncodeToString(hasher.Sum(nil))
-	return password
+	return hashPassword(password, salt.String()), salt.String(), nil
 }
 
 func Auth(user models.User, name string, password string) bool {
-	hash := HashPassword(password, user.Salt)
+	hash := hashPassword(password, user.Salt)
 	if name == user.Name && hash == user.Password {
 		return true
 	}
@@ -86,4 +79,13 @@ func GenHashedPassword(
 	}
 
 	ch <- true
+}
+
+// private
+
+func hashPassword(rawPassword string, salt string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(rawPassword + salt))
+	password := hex.EncodeToString(hasher.Sum(nil))
+	return password
 }
