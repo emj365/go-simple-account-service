@@ -48,7 +48,8 @@ func Auth(user models.User, name string, password string) bool {
 
 	return false
 }
-func GetUserFromRequest(w http.ResponseWriter, r *http.Request, user *models.User) bool {
+func GetUserFromRequest(
+	w http.ResponseWriter, r *http.Request, user *models.User) bool {
 	err := json.NewDecoder(r.Body).Decode(user)
 	if err != nil || user.Name == "" || user.Password == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -58,10 +59,9 @@ func GetUserFromRequest(w http.ResponseWriter, r *http.Request, user *models.Use
 	return true
 }
 
-func CheckUserUnique(ch chan bool, name string, w http.ResponseWriter) {
-	count := 0
-	models.GetDB().Model(models.User{}).Where(models.User{Name: name}).Count(&count)
-	if count > 0 {
+func CheckUserAlreadyExist(ch chan bool, name string, w http.ResponseWriter) {
+	exist := models.CheckUserAlreadyExist(name)
+	if exist {
 		Resonponse(w, http.StatusConflict, map[string]interface{}{"name": name})
 		ch <- false
 		return
@@ -70,7 +70,12 @@ func CheckUserUnique(ch chan bool, name string, w http.ResponseWriter) {
 	ch <- true
 }
 
-func GenHashedPassword(ch chan bool, password string, hashedPassword *string, salt *string, w http.ResponseWriter) {
+func GenHashedPassword(
+	ch chan bool,
+	password string,
+	hashedPassword *string,
+	salt *string,
+	w http.ResponseWriter) {
 	var err error
 	*hashedPassword, *salt, err = GenPasswordHash(password)
 	if err != nil {

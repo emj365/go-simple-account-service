@@ -7,13 +7,6 @@ import (
 
 var db *gorm.DB //database
 
-type User struct {
-	gorm.Model
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Salt     string `json:"-"`
-}
-
 func init() {
 	var err error
 	db, err = gorm.Open("sqlite3", "test.db")

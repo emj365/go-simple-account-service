@@ -12,8 +12,7 @@ import (
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	defer lib.TimeTrack(time.Now(), "getUsers")
 
-	users := []models.User{}
-	models.GetDB().Select("Name").Find(&users)
+	users := models.FindAllUsers()
 	lib.Resonponse(w, http.StatusOK, users)
 }
 
@@ -27,7 +26,7 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 
 	var hashedPassword, salt string
 	ch := make(chan bool)
-	go lib.CheckUserUnique(ch, user.Name, w)
+	go lib.CheckUserAlreadyExist(ch, user.Name, w)
 	go lib.GenHashedPassword(ch, user.Password, &hashedPassword, &salt, w)
 
 	countOfRecived := 0
@@ -43,8 +42,7 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createdUser := models.User{Name: user.Name, Password: hashedPassword, Salt: salt}
-	models.GetDB().Create(&createdUser)
-	createdUser.Password = "*******"
+	models.CreateUser(&createdUser)
 	lib.Resonponse(w, http.StatusCreated, createdUser)
 }
 
@@ -56,9 +54,7 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundUser := models.User{Name: user.Name}
-	count := 0
-	models.GetDB().Where(foundUser).Select("Name, Password, Salt").Find(&foundUser).Count(&count)
+	foundUser, count := models.FoundUserForAuth(user.Name)
 	if count == 0 || !lib.Auth(foundUser, user.Name, user.Password) {
 		w.WriteHeader(http.StatusForbidden)
 		return
