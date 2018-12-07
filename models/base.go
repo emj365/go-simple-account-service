@@ -10,7 +10,7 @@ var db *gorm.DB //database
 type User struct {
 	gorm.Model
 	Name     string `json:"name"`
-	Password string `json:"-"`
+	Password string `json:"password"`
 	Salt     string `json:"-"`
 }
 
@@ -32,5 +32,5 @@ func CloseDB() {
 
 // GetDB returns a handle to the DB object
 func GetDB() *gorm.DB {
-	return db
+	return db.Debug()
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -39,9 +40,9 @@ func HashPassword(rawPassword string, salt string) string {
 	return password
 }
 
-func Auth(user *models.User, name string, password string) bool {
+func Auth(user models.User, name string, password string) bool {
 	hash := HashPassword(password, user.Salt)
-	if hash == user.Password {
+	if name == user.Name && hash == user.Password {
 		return true
 	}
 
@@ -58,4 +59,9 @@ func Resonponse(w http.ResponseWriter, statusCode int, body interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(body)
+}
+
+func TimeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
