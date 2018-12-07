@@ -15,10 +15,10 @@ import (
 )
 
 // GetJWT return jwt with userId
-func GetJWT(userId uint) (string, error) {
+func GetJWT(userID uint) (string, error) {
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": strconv.Itoa(int(userId)),
+		"sub": strconv.Itoa(int(userID)),
 		"exp": now.Add(1 * time.Hour).Unix(),
 	})
 	return token.SignedString([]byte("hmacSampleSecret"))
@@ -48,20 +48,37 @@ func Auth(user models.User, name string, password string) bool {
 
 	return false
 }
+func GetUserFromRequest(w http.ResponseWriter, r *http.Request, user *models.User) bool {
+	err := json.NewDecoder(r.Body).Decode(user)
+	if err != nil || user.Name == "" || user.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return false
+	}
 
-func ResonponseServerError(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusInternalServerError)
-	json.NewEncoder(w).Encode(map[string]interface{}{"error": http.StatusText(http.StatusInternalServerError)})
+	return true
 }
 
-func Resonponse(w http.ResponseWriter, statusCode int, body interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(body)
+func CheckUserUnique(ch chan bool, name string, w http.ResponseWriter) {
+	count := 0
+	models.GetDB().Model(models.User{}).Where(models.User{Name: name}).Count(&count)
+	if count > 0 {
+		Resonponse(w, http.StatusConflict, map[string]interface{}{"name": name})
+		ch <- false
+		return
+	}
+
+	ch <- true
 }
 
-func TimeTrack(start time.Time, name string) {
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
+func GenHashedPassword(ch chan bool, password string, hashedPassword *string, salt *string, w http.ResponseWriter) {
+	var err error
+	*hashedPassword, *salt, err = GenPasswordHash(password)
+	if err != nil {
+		log.Printf("Something went wrong: %s", err)
+		ResonponseServerError(w)
+		ch <- false
+		return
+	}
+
+	ch <- true
 }
