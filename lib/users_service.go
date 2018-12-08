@@ -53,7 +53,8 @@ func GetUserFromRequest(
 }
 
 func CheckUserAlreadyExist(ch chan bool, name string, w http.ResponseWriter) {
-	exist := models.CheckUserAlreadyExist(name)
+	user := models.User{Name: name}
+	exist := user.NameExistence()
 	if exist {
 		Resonponse(w, http.StatusConflict, map[string]interface{}{"name": name})
 		ch <- false

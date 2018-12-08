@@ -12,7 +12,7 @@ import (
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	defer lib.TimeTrack(time.Now(), "getUsers")
 
-	users := models.FindAllUsers()
+	users := models.GetAllUser()
 	lib.Resonponse(w, http.StatusOK, users)
 }
 
@@ -41,9 +41,14 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	createdUser := models.User{Name: user.Name, Password: hashedPassword, Salt: salt}
-	models.CreateUser(&createdUser)
-	lib.Resonponse(w, http.StatusCreated, createdUser)
+	newUser := models.User{Name: user.Name, Password: hashedPassword, Salt: salt}
+	err := newUser.Create()
+	if err != nil {
+		log.Printf("error: %v\n", err)
+		lib.ResonponseServerError(w)
+	}
+
+	lib.Resonponse(w, http.StatusCreated, newUser)
 }
 
 func AuthUser(w http.ResponseWriter, r *http.Request) {
@@ -54,13 +59,15 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundUser := models.GetUserForAuth(user.Name)
-	if foundUser.Name == "" || !lib.Auth(foundUser, user.Name, user.Password) {
+	name, password := user.Name, user.Password
+
+	found := user.FindForAuth()
+	if !found || !lib.Auth(user, name, password) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	jwt, err := lib.GetJWT(foundUser.ID)
+	jwt, err := lib.GetJWT(user.ID)
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
 		lib.ResonponseServerError(w)

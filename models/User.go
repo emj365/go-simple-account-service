@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 )
 
@@ -11,25 +12,30 @@ type User struct {
 	Salt     string `json:"-"`
 }
 
-func FindAllUsers() []User {
+func GetAllUser() []User {
 	users := []User{}
 	GetDB().Select("Name").Find(&users)
 	return users
 }
 
-func GetUserForAuth(name string) User {
-	user := User{}
-	GetDB().Where(User{Name: name}).Select("Name, Password, Salt").Find(&user)
-	return user
+func (u *User) FindForAuth() bool {
+	GetDB().Where(User{Name: u.Name}).Select("Name, Password, Salt").Find(&u)
+	found := u.Name != ""
+	return found
 }
 
-func CreateUser(user *User) {
-	GetDB().Create(user)
-	user.Password = "*******"
+func (u *User) Create() error {
+	if u.Name == "" || u.Password == "" || u.Salt=="" {
+		return errors.New("Name, Password, Salt can not be empty")
+	}
+
+	GetDB().Create(u)
+	u.Password = "*******"
+	return nil
 }
 
-func CheckUserAlreadyExist(name string) bool {
+func (u *User) NameExistence() bool {
 	count := 0
-	GetDB().Model(User{}).Where(User{Name: name}).Count(&count)
+	GetDB().Model(User{}).Where("name = ?", u.Name).Count(&count)
 	return count > 0
 }
