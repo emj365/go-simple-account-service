@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -19,13 +20,13 @@ func GetAllUser() []User {
 }
 
 func (u *User) FindForAuth() bool {
-	GetDB().Where(User{Name: u.Name}).Select("Name, Password, Salt").Find(&u)
+	GetDB().Where(User{Name: u.Name}).Select("ID, Name, Password, Salt").Find(&u)
 	found := u.Name != ""
 	return found
 }
 
 func (u *User) Create() error {
-	if u.Name == "" || u.Password == "" || u.Salt=="" {
+	if u.Name == "" || u.Password == "" || u.Salt == "" {
 		return errors.New("Name, Password, Salt can not be empty")
 	}
 
