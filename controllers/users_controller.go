@@ -3,6 +3,7 @@ package controllers
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/emj365/account/lib"
@@ -76,4 +77,24 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Authorization", "Bearer "+jwt)
 	lib.Resonponse(w, http.StatusOK, map[string]interface{}{"jwt": jwt})
+}
+
+func JWT(w http.ResponseWriter, r *http.Request) {
+	authorizationHeader := r.Header.Get("Authorization")
+	jwt := strings.Replace(authorizationHeader, "Bearer ", "", -1)
+	claims, err := lib.DecodeJWT(jwt)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	sub := claims["sub"]
+	jwt, error := lib.GetJWT(uint(sub.(float64)))
+	if error != nil {
+		lib.ResonponseServerError(w)
+		log.Println("GetJWT Error")
+		return
+	}
+
+	lib.Resonponse(w, http.StatusOK, map[string]string{"jwt": jwt})
 }
