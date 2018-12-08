@@ -28,6 +28,11 @@
 			"Rev": "04140366298a54a039076d798123ffa108fff46c"
 		},
 		{
+			"ImportPath": "github.com/joho/godotenv",
+			"Comment": "v1.3.0-5-g69ed1d9",
+			"Rev": "69ed1d913aa885da390dd6de9febf063d101b097"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-sqlite3",
 			"Comment": "v1.10.0-17-g6a9185d",
 			"Rev": "6a9185d7b1f12363e2c904449d374b63b6093b16"

@@ -7,9 +7,16 @@ import (
 	"github.com/emj365/account/controllers"
 	"github.com/emj365/account/models"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// https://github.com/joho/godotenv#usage
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	router := mux.NewRouter()
 	router.HandleFunc("/users", controllers.PostUsers).Methods("POST")
 	router.HandleFunc("/users", controllers.GetUsers).Methods("GET")

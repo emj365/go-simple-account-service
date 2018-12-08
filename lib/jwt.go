@@ -2,10 +2,16 @@ package lib
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
+
+func getSecretKey() string {
+	secretKey := os.Getenv("SECRET_KEY")
+	return secretKey
+}
 
 // GetJWT return jwt with userId
 func GetJWT(userID uint) (string, error) {
@@ -14,7 +20,7 @@ func GetJWT(userID uint) (string, error) {
 		"sub": int(userID),
 		"exp": now.Add(1 * time.Hour).Unix(),
 	})
-	return token.SignedString([]byte("hmacSampleSecret"))
+	return token.SignedString([]byte(getSecretKey()))
 }
 
 func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
@@ -23,7 +29,7 @@ func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte("hmacSampleSecret"), nil
+		return []byte(getSecretKey()), nil
 	})
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
