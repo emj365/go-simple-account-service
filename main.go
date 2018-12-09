@@ -25,7 +25,7 @@ func main() {
 	router.HandleFunc("/users", controllers.PostUsers).Methods("POST")
 	router.HandleFunc("/users", controllers.GetUsers).Methods("GET")
 	router.HandleFunc("/me", controllers.GetMe).Methods("GET")
-	router.HandleFunc("/auth", controllers.AuthUser).Methods("POST")
+	router.HandleFunc("/auth", controllers.Auth).Methods("POST")
 	router.HandleFunc("/jwt", controllers.JWT).Methods("GET")
 	log.Println("server is running on 8000")
 	log.Fatal(http.ListenAndServe(":8000", router))

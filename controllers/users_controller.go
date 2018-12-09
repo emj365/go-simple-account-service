@@ -35,34 +35,22 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var hashedPassword, salt string
-	ch := make(chan bool)
-	go services.CheckUserAlreadyExist(ch, user.Name, w)
-	go services.GenHashedPassword(ch, user.Password, &hashedPassword, &salt, w)
-
-	countOfRecived := 0
-	for countOfRecived < 2 {
-		select {
-		case successed := <-ch:
-			if !successed {
-				return
-			}
-
-			countOfRecived++
-		}
+	exist := user.NameExistence()
+	if exist {
+		libs.Resonponse(w, http.StatusConflict, map[string]interface{}{"name": user.Name})
+		return
 	}
 
-	newUser := models.User{Name: user.Name, Password: hashedPassword, Salt: salt}
-	err := newUser.Create()
+	err := user.Create()
 	if err != nil {
 		log.Printf("error: %v\n", err)
 		libs.ResonponseServerError(w)
 	}
 
-	libs.Resonponse(w, http.StatusCreated, newUser)
+	libs.Resonponse(w, http.StatusCreated, user)
 }
 
-func AuthUser(w http.ResponseWriter, r *http.Request) {
+func Auth(w http.ResponseWriter, r *http.Request) {
 	defer libs.TimeTrack(time.Now(), "auth")
 
 	user := models.User{}
@@ -70,10 +58,7 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password := user.Password
-	found := user.FindForAuth()
-
-	if !found || !user.Auth(password) {
+	if !user.Auth() {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}

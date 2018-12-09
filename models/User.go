@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/emj365/account/libs"
+	uuid "github.com/satori/go.uuid"
 )
 
 type User struct {
@@ -27,29 +28,40 @@ func FindUserByID(u *User, userID uint) {
 	GetDB().Where(userID).Select("id, created_at, updated_at, name").First(u)
 }
 
-func (u *User) Auth(password string) bool {
-	hash := libs.HashPassword(password, u.Salt)
+func (u *User) Auth() bool {
+	plaintextPassword := u.Password
 
-	if hash == u.Password {
+	found := u.findForAuth()
+	hashedPassword := libs.HashPassword(plaintextPassword, u.Salt)
+	if found && hashedPassword == u.Password {
 		return true
 	}
 
 	return false
 }
 
-func (u *User) FindForAuth() bool {
+func (u *User) findForAuth() bool {
 	GetDB().Where(User{Name: u.Name}).Select("id, created_at, updated_at, name, password, salt").Find(&u)
 	found := u.Name != ""
 	return found
 }
 
 func (u *User) Create() error {
-	if u.Name == "" || u.Password == "" || u.Salt == "" {
-		return errors.New("Name, Password, Salt can not be empty")
+	if u.Name == "" || u.Password == "" {
+		return errors.New("Name, Password can not be empty")
 	}
+
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
+	u.Salt = uuid.String()
+	u.Password = libs.HashPassword(u.Password, u.Salt)
 
 	GetDB().Create(u)
 	u.Password = "*******"
+	u.Salt = ""
 	return nil
 }
 
