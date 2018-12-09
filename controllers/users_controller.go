@@ -7,6 +7,7 @@ import (
 
 	"github.com/emj365/account/lib"
 	"github.com/emj365/account/models"
+	"github.com/emj365/account/services"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
@@ -30,14 +31,14 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 	defer lib.TimeTrack(time.Now(), "postUsers")
 
 	user := models.User{}
-	if !lib.GetUserFromRequest(w, r, &user) {
+	if !services.GetUserFromRequest(w, r, &user) {
 		return
 	}
 
 	var hashedPassword, salt string
 	ch := make(chan bool)
-	go lib.CheckUserAlreadyExist(ch, user.Name, w)
-	go lib.GenHashedPassword(ch, user.Password, &hashedPassword, &salt, w)
+	go services.CheckUserAlreadyExist(ch, user.Name, w)
+	go services.GenHashedPassword(ch, user.Password, &hashedPassword, &salt, w)
 
 	countOfRecived := 0
 	for countOfRecived < 2 {
@@ -65,14 +66,14 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 	defer lib.TimeTrack(time.Now(), "auth")
 
 	user := models.User{}
-	if !lib.GetUserFromRequest(w, r, &user) {
+	if !services.GetUserFromRequest(w, r, &user) {
 		return
 	}
 
-	name, password := user.Name, user.Password
-
+	password := user.Password
 	found := user.FindForAuth()
-	if !found || !lib.Auth(user, name, password) {
+
+	if !found || !user.Auth(password) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}

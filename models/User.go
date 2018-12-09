@@ -3,6 +3,8 @@ package models
 import (
 	"errors"
 	"time"
+
+	"github.com/emj365/account/lib"
 )
 
 type User struct {
@@ -23,6 +25,16 @@ func GetAllUser() []User {
 
 func FindUserByID(u *User, userID uint) {
 	GetDB().Where(userID).Select("id, created_at, updated_at, name").First(u)
+}
+
+func (u *User) Auth(password string) bool {
+	hash := lib.HashPassword(password, u.Salt)
+
+	if hash == u.Password {
+		return true
+	}
+
+	return false
 }
 
 func (u *User) FindForAuth() bool {
