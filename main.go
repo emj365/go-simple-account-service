@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/emj365/account/controllers"
-	"github.com/emj365/account/lib"
+	"github.com/emj365/account/libs"
 	"github.com/emj365/account/models"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -57,7 +57,7 @@ var jwtAuthentication = func(next http.Handler) http.Handler {
 
 		authorizationHeader := r.Header.Get("Authorization")
 		jwt := strings.Replace(authorizationHeader, "Bearer ", "", -1)
-		claims, err := lib.DecodeJWT(jwt)
+		claims, err := libs.DecodeJWT(jwt)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return

@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/emj365/account/lib"
+	"github.com/emj365/account/libs"
 	"github.com/emj365/account/models"
 	uuid "github.com/satori/go.uuid"
 )
@@ -25,7 +25,7 @@ func CheckUserAlreadyExist(ch chan bool, name string, w http.ResponseWriter) {
 	user := models.User{Name: name}
 	exist := user.NameExistence()
 	if exist {
-		lib.Resonponse(w, http.StatusConflict, map[string]interface{}{"name": name})
+		libs.Resonponse(w, http.StatusConflict, map[string]interface{}{"name": name})
 		ch <- false
 		return
 	}
@@ -44,13 +44,13 @@ func GenHashedPassword(
 
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
-		lib.ResonponseServerError(w)
+		libs.ResonponseServerError(w)
 		ch <- false
 		return
 	}
 
 	*salt = uuid.String()
-	*hashedPassword = lib.HashPassword(password, *salt)
+	*hashedPassword = libs.HashPassword(password, *salt)
 
 	ch <- true
 }

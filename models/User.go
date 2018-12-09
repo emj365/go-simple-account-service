@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/emj365/account/lib"
+	"github.com/emj365/account/libs"
 )
 
 type User struct {
@@ -28,7 +28,7 @@ func FindUserByID(u *User, userID uint) {
 }
 
 func (u *User) Auth(password string) bool {
-	hash := lib.HashPassword(password, u.Salt)
+	hash := libs.HashPassword(password, u.Salt)
 
 	if hash == u.Password {
 		return true

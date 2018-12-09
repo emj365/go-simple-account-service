@@ -5,30 +5,30 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emj365/account/lib"
+	"github.com/emj365/account/libs"
 	"github.com/emj365/account/models"
 	"github.com/emj365/account/services"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "getUsers")
+	defer libs.TimeTrack(time.Now(), "getUsers")
 
 	users := models.GetAllUser()
-	lib.Resonponse(w, http.StatusOK, users)
+	libs.Resonponse(w, http.StatusOK, users)
 }
 
 func GetMe(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "getMe")
+	defer libs.TimeTrack(time.Now(), "getMe")
 
 	userID := r.Context().Value("userID")
 
 	user := models.User{}
 	models.FindUserByID(&user, uint(userID.(float64)))
-	lib.Resonponse(w, http.StatusOK, user)
+	libs.Resonponse(w, http.StatusOK, user)
 }
 
 func PostUsers(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "postUsers")
+	defer libs.TimeTrack(time.Now(), "postUsers")
 
 	user := models.User{}
 	if !services.GetUserFromRequest(w, r, &user) {
@@ -56,14 +56,14 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 	err := newUser.Create()
 	if err != nil {
 		log.Printf("error: %v\n", err)
-		lib.ResonponseServerError(w)
+		libs.ResonponseServerError(w)
 	}
 
-	lib.Resonponse(w, http.StatusCreated, newUser)
+	libs.Resonponse(w, http.StatusCreated, newUser)
 }
 
 func AuthUser(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "auth")
+	defer libs.TimeTrack(time.Now(), "auth")
 
 	user := models.User{}
 	if !services.GetUserFromRequest(w, r, &user) {
@@ -78,25 +78,25 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, err := lib.GetJWT(float64(user.ID))
+	jwt, err := libs.GetJWT(float64(user.ID))
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
-		lib.ResonponseServerError(w)
+		libs.ResonponseServerError(w)
 		return
 	}
 
 	w.Header().Set("Authorization", "Bearer "+jwt)
-	lib.Resonponse(w, http.StatusOK, map[string]interface{}{"jwt": jwt})
+	libs.Resonponse(w, http.StatusOK, map[string]interface{}{"jwt": jwt})
 }
 
 func JWT(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("userID")
-	jwt, error := lib.GetJWT(userID.(float64))
+	jwt, error := libs.GetJWT(userID.(float64))
 	if error != nil {
-		lib.ResonponseServerError(w)
+		libs.ResonponseServerError(w)
 		log.Println("GetJWT Error")
 		return
 	}
 
-	lib.Resonponse(w, http.StatusOK, map[string]string{"jwt": jwt})
+	libs.Resonponse(w, http.StatusOK, map[string]string{"jwt": jwt})
 }
