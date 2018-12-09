@@ -40,12 +40,6 @@ func (u *User) Auth() bool {
 	return false
 }
 
-func (u *User) findForAuth() bool {
-	GetDB().Where(User{Name: u.Name}).Select("id, created_at, updated_at, name, password, salt").Find(&u)
-	found := u.Name != ""
-	return found
-}
-
 func (u *User) Create() error {
 	if u.Name == "" || u.Password == "" {
 		return errors.New("Name, Password can not be empty")
@@ -69,4 +63,12 @@ func (u *User) NameExistence() bool {
 	count := 0
 	GetDB().Model(User{}).Where("name = ?", u.Name).Count(&count)
 	return count > 0
+}
+
+// private
+
+func (u *User) findForAuth() bool {
+	GetDB().Where(User{Name: u.Name}).Select("id, created_at, updated_at, name, password, salt").Find(&u)
+	found := u.Name != ""
+	return found
 }
