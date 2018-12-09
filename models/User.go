@@ -2,25 +2,31 @@ package models
 
 import (
 	"errors"
-
-	"github.com/jinzhu/gorm"
+	"time"
 )
 
 type User struct {
-	gorm.Model
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Salt     string `json:"-"`
+	ID        uint       `gorm:"primary_key" json:"id"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at"`
+	Name      string     `json:"name"`
+	Password  string     `json:"password"`
+	Salt      string     `json:"-"`
 }
 
 func GetAllUser() []User {
 	users := []User{}
-	GetDB().Select("Name").Find(&users)
+	GetDB().Select("id, created_at, updated_at, name").Find(&users)
 	return users
 }
 
+func FindUserByID(u *User, userID uint) {
+	GetDB().Where(userID).Select("id, created_at, updated_at, name").First(u)
+}
+
 func (u *User) FindForAuth() bool {
-	GetDB().Where(User{Name: u.Name}).Select("ID, Name, Password, Salt").Find(&u)
+	GetDB().Where(User{Name: u.Name}).Select("id, created_at, updated_at, name, password, salt").Find(&u)
 	found := u.Name != ""
 	return found
 }

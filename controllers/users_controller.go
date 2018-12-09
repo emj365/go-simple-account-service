@@ -3,7 +3,6 @@ package controllers
 import (
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/emj365/account/lib"
@@ -15,6 +14,16 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	users := models.GetAllUser()
 	lib.Resonponse(w, http.StatusOK, users)
+}
+
+func GetMe(w http.ResponseWriter, r *http.Request) {
+	defer lib.TimeTrack(time.Now(), "getMe")
+
+	userID := r.Context().Value("userID")
+
+	user := models.User{}
+	models.FindUserByID(&user, uint(userID.(float64)))
+	lib.Resonponse(w, http.StatusOK, user)
 }
 
 func PostUsers(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +77,7 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, err := lib.GetJWT(user.ID)
+	jwt, err := lib.GetJWT(float64(user.ID))
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
 		lib.ResonponseServerError(w)
@@ -80,16 +89,8 @@ func AuthUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func JWT(w http.ResponseWriter, r *http.Request) {
-	authorizationHeader := r.Header.Get("Authorization")
-	jwt := strings.Replace(authorizationHeader, "Bearer ", "", -1)
-	claims, err := lib.DecodeJWT(jwt)
-	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
-	sub := claims["sub"]
-	jwt, error := lib.GetJWT(uint(sub.(float64)))
+	userID := r.Context().Value("userID")
+	jwt, error := lib.GetJWT(userID.(float64))
 	if error != nil {
 		lib.ResonponseServerError(w)
 		log.Println("GetJWT Error")

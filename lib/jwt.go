@@ -14,15 +14,16 @@ func getSecretKey() string {
 }
 
 // GetJWT return jwt with userId
-func GetJWT(userID uint) (string, error) {
+func GetJWT(userID float64) (string, error) {
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": int(userID),
+		"sub": userID,
 		"exp": now.Add(1 * time.Hour).Unix(),
 	})
 	return token.SignedString([]byte(getSecretKey()))
 }
 
+// DecodeJWT try to decode JWT string and return jwt.MapClaims, error
 func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -32,7 +33,7 @@ func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
 		return []byte(getSecretKey()), nil
 	})
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(jwt.MapClaims); err == nil && ok && token.Valid {
 		return claims, nil
 	}
 

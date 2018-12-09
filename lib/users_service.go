@@ -28,6 +28,7 @@ func Auth(user models.User, name string, password string) bool {
 
 	return false
 }
+
 func GetUserFromRequest(
 	w http.ResponseWriter, r *http.Request, user *models.User) bool {
 	err := json.NewDecoder(r.Body).Decode(user)
