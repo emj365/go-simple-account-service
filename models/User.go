@@ -45,11 +45,7 @@ func (u *User) Create() error {
 		return errors.New("Name, Password can not be empty")
 	}
 
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-
+	uuid := uuid.NewV4()
 	u.Salt = uuid.String()
 	u.Password = libs.HashPassword(u.Password, u.Salt)
 
