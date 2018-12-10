@@ -58,6 +58,12 @@ var jwtAuthentication = func(next http.Handler) http.Handler {
 		authorizationHeader := r.Header.Get("Authorization")
 		jwt := strings.Replace(authorizationHeader, "Bearer ", "", -1)
 		claims, err := libs.DecodeJWT(jwt)
+
+		if err == libs.ErrDecodeJWTClaimsFailed {
+			libs.ResonponseServerError(w)
+			return
+		}
+
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return

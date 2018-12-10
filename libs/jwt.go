@@ -1,17 +1,13 @@
 package libs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
-
-func getSecretKey() string {
-	secretKey := os.Getenv("SECRET_KEY")
-	return secretKey
-}
 
 // GetJWT return jwt with userId
 func GetJWT(userID float64) (string, error) {
@@ -23,6 +19,9 @@ func GetJWT(userID float64) (string, error) {
 	return token.SignedString([]byte(getSecretKey()))
 }
 
+// ErrDecodeJWTClaimsFailed be returned when decode jwt claims
+var ErrDecodeJWTClaimsFailed = errors.New("Failed to decode JWT")
+
 // DecodeJWT try to decode JWT string and return jwt.MapClaims, error
 func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -33,9 +32,25 @@ func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
 		return []byte(getSecretKey()), nil
 	})
 
-	if claims, ok := token.Claims.(jwt.MapClaims); err == nil && ok && token.Valid {
-		return claims, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, err
+	if !token.Valid {
+		return nil, errors.New("Invalied JWT")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, ErrDecodeJWTClaimsFailed
+	}
+
+	return claims, nil
+}
+
+// private
+
+func getSecretKey() string {
+	secretKey := os.Getenv("SECRET_KEY")
+	return secretKey
 }
