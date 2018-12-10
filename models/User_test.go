@@ -1,79 +1,82 @@
 package models
 
 import (
-	"log"
 	"testing"
 )
 
-func TestGetAllUser(t *testing.T) {
-	GetDB().Unscoped().Delete(&User{})
+var userName = "mike"
 
-	user := User{Name: "mike", Password: "passwd"}
-	user.Create()
+func deleteUsers() {
+	GetDB().Unscoped().Delete(&User{})
+}
+
+func createUser() (User, error) {
+	user := User{Name: userName, Password: "whatever"}
+	err := user.Create()
+	return user, err
+}
+
+func TestGetAllUser(t *testing.T) {
+	deleteUsers()
+	createUser()
 
 	users := GetAllUser()
-	if len(users) != 1 {
-		log.Fatalf("TestGetAllUser get wrong almount, which is %v", len(users))
+
+	if want := 1; len(users) != want {
+		t.Errorf("len(users) == %v, want %v", len(users), want)
 	}
 
-	GetDB().First(&user, user.ID)
-	if user.Name != "mike" {
-		log.Fatalf("TestGetAllUser user.name: %s", user.Name)
+	user := &users[0]
+	if want := userName; user.Name != want {
+		t.Errorf("user.Name == %s, want %s", user.Name, want)
 	}
 }
 
-func TextFindUserByID(t *testing.T) {
-	GetDB().Unscoped().Delete(&User{})
-
-	user := User{Name: "mike", Password: "passwd"}
-	user.Create()
+func TestFindUserByID(t *testing.T) {
+	deleteUsers()
+	user, _ := createUser()
 
 	foundUser := User{}
 	FindUserByID(&foundUser, user.ID)
 
-	if foundUser.Name != "mike" {
-		log.Fatalf("TextFindUserByID foundUser.Name: %s", foundUser.Name)
+	if want := userName; foundUser.Name != want {
+		t.Errorf("foundUser.Name == %s, want %s", foundUser.Name, want)
 	}
 }
 
 func TestCreate(t *testing.T) {
-	GetDB().Unscoped().Delete(&User{})
-
-	user := User{Name: "mike", Password: "passwd"}
-	err := user.Create()
+	deleteUsers()
+	user, err := createUser()
 
 	if err != nil {
-		log.Fatalf("TestCreate get error: %s", err)
+		t.Errorf("err == %s, want %v", err, nil)
 	}
 
-	if user.Password != "*******" {
-		log.Fatalf("TestCreate user.Password: %s", user.Password)
+	if want := "*******"; user.Password != want {
+		t.Errorf("user.Password == %s, want %s", err, want)
 	}
 
-	if user.Salt != "" {
-		log.Fatalf("TestCreate user.Salt: %s", user.Salt)
+	if want := ""; user.Salt != want {
+		t.Errorf("user.Salt == %s, want %s", user.Salt, want)
 	}
 
 	var count int
 	GetDB().Model(User{}).Count(&count)
-	if count != 1 {
-		log.Fatalf("TestCreate get wrong users almount, which is %v", count)
+	if want := 1; count != want {
+		t.Errorf("count == %v, want %v", count, want)
 	}
 }
 
 func TestNameExistence(t *testing.T) {
-	GetDB().Unscoped().Delete(&User{})
+	deleteUsers()
+	user, _ := createUser()
 
-	user := User{Name: "mike", Password: "passwd"}
-	user.Create()
-
-	var existence bool
-	if existence = user.NameExistence(); !existence {
-		log.Fatalf("TestNameExistence user.NameExistence: %v", existence)
+	if existence, want := user.NameExistence(), true; existence != want {
+		t.Errorf("user.NameExistence == %v, want %v", existence, want)
 	}
 
 	user.Name = "none"
-	if existence = user.NameExistence(); existence {
-		log.Fatalf("TestNameExistence user.NameExistence: %v", existence)
+	if existence, want := user.NameExistence(), false; existence != want {
+		t.Errorf("user.NameExistence == %v, want %v", existence, want)
 	}
 }
