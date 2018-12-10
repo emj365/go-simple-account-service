@@ -44,6 +44,27 @@ func TestFindUserByID(t *testing.T) {
 	}
 }
 
+func TestAuth(t *testing.T) {
+	deleteUsers()
+	user, _ := createUser()
+
+	user.Password = "whatever" // the password used in creating
+	if want := true; user.Auth() != want {
+		t.Errorf("user.Auth() == %v, want %v", user.Auth(), want)
+	}
+
+	user.Password = "wrong"
+	if want := false; user.Auth() != want {
+		t.Errorf("user.Auth() == %v, want %v", user.Auth(), want)
+	}
+
+	user.Password = "whatever" // the password used in creating
+	user.Name = "wrong"
+	if want := false; user.Auth() != want {
+		t.Errorf("user.Auth() == %v, want %v", user.Auth(), want)
+	}
+}
+
 func TestCreate(t *testing.T) {
 	deleteUsers()
 	user, err := createUser()
