@@ -22,7 +22,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func GetMe(w http.ResponseWriter, r *http.Request) {
 	defer libs.TimeTrack(time.Now(), "getMe")
 
-	userID := r.Context().Value("userID").(uint)
+	userID := getUserID(r)
 
 	user := models.User{}
 	models.FindUserByID(&user, userID)
@@ -77,7 +77,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 }
 
 func JWT(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(uint)
+	userID := getUserID(r)
 	jwt, err := getJWT(userID)
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
@@ -89,6 +89,10 @@ func JWT(w http.ResponseWriter, r *http.Request) {
 }
 
 // private
+
+func getUserID(r *http.Request) uint {
+	return r.Context().Value(libs.ContextUserID).(uint)
+}
 
 func getJWT(userID uint) (string, error) {
 	now := time.Now()
