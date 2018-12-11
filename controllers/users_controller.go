@@ -3,10 +3,8 @@ package controllers
 import (
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/emj365/go-simple-account-service/libs"
 	"github.com/emj365/go-simple-account-service/models"
 	"github.com/emj365/go-simple-account-service/services"
@@ -22,7 +20,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func GetMe(w http.ResponseWriter, r *http.Request) {
 	defer libs.TimeTrack(time.Now(), "getMe")
 
-	userID := getUserID(r)
+	userID := services.GetUserID(r)
 
 	user := models.User{}
 	models.FindUserByID(&user, userID)
@@ -65,7 +63,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, err := getJWT(user.ID)
+	jwt, err := services.GetJWT(user.ID)
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
 		libs.ResonponseServerError(w)
@@ -77,8 +75,8 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 }
 
 func JWT(w http.ResponseWriter, r *http.Request) {
-	userID := getUserID(r)
-	jwt, err := getJWT(userID)
+	userID := services.GetUserID(r)
+	jwt, err := services.GetJWT(userID)
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
 		libs.ResonponseServerError(w)
@@ -86,28 +84,4 @@ func JWT(w http.ResponseWriter, r *http.Request) {
 	}
 
 	libs.Resonponse(w, http.StatusOK, map[string]string{"jwt": jwt})
-}
-
-// private
-
-func getUserID(r *http.Request) uint {
-	return r.Context().Value(libs.ContextUserID).(uint)
-}
-
-func getJWT(userID uint) (string, error) {
-	now := time.Now()
-	jsonWebToken := libs.JsonWebToken{SecretKey: libs.GetSecretKey(),
-		Claims: jwt.StandardClaims{
-			Subject:   strconv.Itoa(int(userID)),
-			ExpiresAt: int64(now.Add(1 * time.Hour).Unix()),
-		},
-		Token: "",
-	}
-
-	err := jsonWebToken.GenToken()
-	if err != nil {
-		return "", err
-	}
-
-	return jsonWebToken.Token, nil
 }
