@@ -3,8 +3,10 @@ package controllers
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/emj365/go-simple-account-service/libs"
 	"github.com/emj365/go-simple-account-service/models"
 	"github.com/emj365/go-simple-account-service/services"
@@ -63,7 +65,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, err := libs.GetJWT(float64(user.ID))
+	jwt, err := getJWT(user.ID)
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
 		libs.ResonponseServerError(w)
@@ -75,13 +77,33 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 }
 
 func JWT(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID")
-	jwt, error := libs.GetJWT(userID.(float64))
-	if error != nil {
+	userID := r.Context().Value("userID").(uint)
+	jwt, err := getJWT(userID)
+	if err != nil {
+		log.Printf("Something went wrong: %s", err)
 		libs.ResonponseServerError(w)
-		log.Println("GetJWT Error")
 		return
 	}
 
 	libs.Resonponse(w, http.StatusOK, map[string]string{"jwt": jwt})
+}
+
+// private
+
+func getJWT(userID uint) (string, error) {
+	now := time.Now()
+	jsonWebToken := libs.JsonWebToken{SecretKey: libs.GetSecretKey(),
+		Claims: jwt.StandardClaims{
+			Subject:   strconv.Itoa(int(userID)),
+			ExpiresAt: int64(now.Add(1 * time.Hour).Unix()),
+		},
+		Token: "",
+	}
+
+	err := jsonWebToken.GenToken()
+	if err != nil {
+		return "", err
+	}
+
+	return jsonWebToken.Token, nil
 }

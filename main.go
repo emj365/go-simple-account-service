@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/emj365/go-simple-account-service/controllers"
 	"github.com/emj365/go-simple-account-service/libs"
 	"github.com/emj365/go-simple-account-service/models"
@@ -56,21 +58,26 @@ var jwtAuthentication = func(next http.Handler) http.Handler {
 		}
 
 		authorizationHeader := r.Header.Get("Authorization")
-		jwt := strings.Replace(authorizationHeader, "Bearer ", "", -1)
-		claims, err := libs.DecodeJWT(jwt)
+		token := strings.Replace(authorizationHeader, "Bearer ", "", -1)
 
-		if err == libs.ErrDecodeJWTClaimsFailed {
-			libs.ResonponseServerError(w)
-			return
-		}
-
+		jsonWebToken := libs.JsonWebToken{SecretKey: libs.GetSecretKey(),
+			Token:  token,
+			Claims: jwt.StandardClaims{}}
+		err := jsonWebToken.Decode()
 		if err != nil {
+			log.Printf("Something went wrong: %s", err)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
-		sub := claims["sub"]
-		ctx := context.WithValue(r.Context(), "userID", sub)
+		sub, err := strconv.Atoi(jsonWebToken.Claims.Subject)
+		if err != nil {
+			log.Printf("Something went wrong: %s", err)
+			libs.ResonponseServerError(w)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "userID", uint(sub))
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})
