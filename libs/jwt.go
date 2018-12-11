@@ -49,8 +49,27 @@ func (jsonWebToken *JsonWebToken) Decode() error {
 		return errors.New("Invalied JWT")
 	}
 
-	claims, _ := token.Claims.(jwt.StandardClaims)
-	jsonWebToken.Claims = claims
+	var claims jwt.MapClaims
+	var ok bool
+	claims, ok = token.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.New("Invalied JWT Claims")
+	}
+
+	var sub string
+	sub, ok = claims["sub"].(string)
+	if !ok {
+		return errors.New("Invalied JWT Claims")
+	}
+
+	var exp float64
+	if exp, ok = claims["exp"].(float64); !ok {
+		return errors.New("Invalied JWT Claims")
+	}
+
+	jsonWebToken.Claims.Subject = sub
+	jsonWebToken.Claims.ExpiresAt = int64(exp)
+
 	return nil
 }
 
