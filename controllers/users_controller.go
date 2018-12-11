@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emj365/account/libs"
-	"github.com/emj365/account/models"
-	"github.com/emj365/account/services"
+	"github.com/emj365/go-simple-account-service/libs"
+	"github.com/emj365/go-simple-account-service/models"
+	"github.com/emj365/go-simple-account-service/services"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {

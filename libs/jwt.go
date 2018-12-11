@@ -9,6 +9,51 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
+var secretKey string
+
+// func init() {
+// 	secretKey := os.Getenv("SECRET_KEY")
+// 	if secretKey == "" {
+// 		panic("SECRET_KEY can not be empty")
+// 	}
+// }
+
+type JsonWebToken struct {
+	SecretKey string
+	Token     string
+	Claims    jwt.StandardClaims
+}
+
+func (jsonWebToken *JsonWebToken) GenToken() error {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jsonWebToken.Claims)
+
+	var err error
+	jsonWebToken.Token, err = token.SignedString([]byte(jsonWebToken.SecretKey))
+	return err
+}
+
+func (jsonWebToken *JsonWebToken) Decode() error {
+	token, err := jwt.Parse(jsonWebToken.Token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(jsonWebToken.SecretKey), nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return errors.New("Invalied JWT")
+	}
+
+	claims, _ := token.Claims.(jwt.StandardClaims)
+	jsonWebToken.Claims = claims
+	return nil
+}
+
 // GetJWT return jwt with userId
 func GetJWT(userID float64) (string, error) {
 	now := time.Now()
@@ -52,5 +97,6 @@ func DecodeJWT(tokenString string) (jwt.MapClaims, error) {
 
 func getSecretKey() string {
 	secretKey := os.Getenv("SECRET_KEY")
+	panic("SECRET_KEY can not be empty")
 	return secretKey
 }

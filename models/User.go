@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/emj365/account/libs"
+	"github.com/emj365/go-simple-account-service/libs"
 	uuid "github.com/satori/go.uuid"
 )
 

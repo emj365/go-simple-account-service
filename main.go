@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/emj365/account/controllers"
-	"github.com/emj365/account/libs"
-	"github.com/emj365/account/models"
+	"github.com/emj365/go-simple-account-service/controllers"
+	"github.com/emj365/go-simple-account-service/libs"
+	"github.com/emj365/go-simple-account-service/models"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )

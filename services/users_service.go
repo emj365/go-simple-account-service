@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/emj365/account/models"
+	"github.com/emj365/go-simple-account-service/models"
 )
 
 func GetUserFromRequest(
