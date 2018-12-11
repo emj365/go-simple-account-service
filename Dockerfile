@@ -1,13 +1,13 @@
 FROM golang:1.11
-
-EXPOSE 8000
-
-WORKDIR /go/src/github.com/emj365/account
-
+WORKDIR /go/src/app
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-COPY ./Gopkg.lock Gopkg.toml /go/src/github.com/emj365/account/
+COPY ./Gopkg.lock Gopkg.toml /go/src/app/
 RUN dep ensure -vendor-only
+COPY . /go/src/app
+CMD ["go", "build", "main.go"]
 
-COPY . /go/src/github.com/emj365/account
-
-CMD go run main.go
+FROM alpine:latest
+EXPOSE 8000
+WORKDIR /root/
+COPY --from=0 /go/src/app/app .
+CMD ["./app"]
