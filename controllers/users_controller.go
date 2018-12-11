@@ -22,10 +22,10 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func GetMe(w http.ResponseWriter, r *http.Request) {
 	defer libs.TimeTrack(time.Now(), "getMe")
 
-	userID := r.Context().Value("userID")
+	userID := r.Context().Value("userID").(uint)
 
 	user := models.User{}
-	models.FindUserByID(&user, uint(userID.(float64)))
+	models.FindUserByID(&user, userID)
 	libs.Resonponse(w, http.StatusOK, user)
 }
 
