@@ -1,3 +1,7 @@
 test.db
-vendor/
+
 debug
+.env
+
+vendor/
+_vendor-*/

@@ -5,68 +5,83 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emj365/account/lib"
-	"github.com/emj365/account/models"
+	"github.com/emj365/go-simple-account-service/libs"
+	"github.com/emj365/go-simple-account-service/models"
+	"github.com/emj365/go-simple-account-service/services"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "getUsers")
+	defer libs.TimeTrack(time.Now(), "getUsers")
 
-	users := models.FindAllUsers()
-	lib.Resonponse(w, http.StatusOK, users)
+	users := models.GetAllUser()
+	libs.Resonponse(w, http.StatusOK, users)
+}
+
+func GetMe(w http.ResponseWriter, r *http.Request) {
+	defer libs.TimeTrack(time.Now(), "getMe")
+
+	userID := r.Context().Value("userID")
+
+	user := models.User{}
+	models.FindUserByID(&user, uint(userID.(float64)))
+	libs.Resonponse(w, http.StatusOK, user)
 }
 
 func PostUsers(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "postUsers")
+	defer libs.TimeTrack(time.Now(), "postUsers")
 
 	user := models.User{}
-	if !lib.GetUserFromRequest(w, r, &user) {
+	if !services.GetUserFromRequest(w, r, &user) {
 		return
 	}
 
-	var hashedPassword, salt string
-	ch := make(chan bool)
-	go lib.CheckUserAlreadyExist(ch, user.Name, w)
-	go lib.GenHashedPassword(ch, user.Password, &hashedPassword, &salt, w)
-
-	countOfRecived := 0
-	for countOfRecived < 2 {
-		select {
-		case successed := <-ch:
-			if !successed {
-				return
-			}
-
-			countOfRecived++
-		}
+	exist := user.NameExistence()
+	if exist {
+		libs.Resonponse(w, http.StatusConflict, map[string]interface{}{"name": user.Name})
+		return
 	}
 
-	createdUser := models.User{Name: user.Name, Password: hashedPassword, Salt: salt}
-	models.CreateUser(&createdUser)
-	lib.Resonponse(w, http.StatusCreated, createdUser)
+	err := user.Create()
+	if err != nil {
+		log.Printf("error: %v\n", err)
+		libs.ResonponseServerError(w)
+	}
+
+	libs.Resonponse(w, http.StatusCreated, user)
 }
 
-func AuthUser(w http.ResponseWriter, r *http.Request) {
-	defer lib.TimeTrack(time.Now(), "auth")
+func Auth(w http.ResponseWriter, r *http.Request) {
+	defer libs.TimeTrack(time.Now(), "auth")
 
 	user := models.User{}
-	if !lib.GetUserFromRequest(w, r, &user) {
+	if !services.GetUserFromRequest(w, r, &user) {
 		return
 	}
 
-	foundUser := models.GetUserForAuth(user.Name)
-	if foundUser.Name == "" || !lib.Auth(foundUser, user.Name, user.Password) {
+	if !user.Auth() {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	jwt, err := lib.GetJWT(foundUser.ID)
+	jwt, err := libs.GetJWT(float64(user.ID))
 	if err != nil {
 		log.Printf("Something went wrong: %s", err)
-		lib.ResonponseServerError(w)
+		libs.ResonponseServerError(w)
 		return
 	}
 
 	w.Header().Set("Authorization", "Bearer "+jwt)
-	lib.Resonponse(w, http.StatusOK, map[string]interface{}{"jwt": jwt})
+	libs.Resonponse(w, http.StatusOK, map[string]interface{}{"jwt": jwt})
+}
+
+func JWT(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID")
+	jwt, error := libs.GetJWT(userID.(float64))
+	if error != nil {
+		libs.ResonponseServerError(w)
+		log.Println("GetJWT Error")
+		return
+	}
+
+	libs.Resonponse(w, http.StatusOK, map[string]string{"jwt": jwt})
 }
